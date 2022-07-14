@@ -15,37 +15,51 @@ struct Cli {
 enum Commands {
     /// Pretty print the bits of the input value.
     Bits {
+        /// Number of bits to chunk the input by: 1, 2, or 4.
+        #[clap(value_parser = clap::value_parser!(u8))]
+        chunk: u8,
+
         /// The base is determined by the value's prefix. E.g. 0oXX for octal, 0xXX for hexidecimal, and no prefix for
         /// decimal.
         #[clap(value_parser)]
         input: String,
-
-        /// Number of bits to chunk the input by: 1, 2, or 4.
-        #[clap(default_value_t = 4, value_parser = clap::value_parser!(u8))]
-        chunk: u8,
     },
 
     /// Show the signed decimal representation of the input value.
     Signed {
+        /// Number of bits in the signed value: 8, 16, 32, or 64.
+        #[clap(value_parser = clap::value_parser!(u8))]
+        bits: u8,
+
         /// The base is determined by the value's prefix. E.g. 0oXX for octal, 0xXX for hexidecimal, and no prefix for
         /// decimal.
         #[clap(value_parser)]
         input: String,
-
-        /// Number of bits in the signed value: 8, 16, 32, or 64.
-        #[clap(default_value_t = 64, value_parser = clap::value_parser!(u8))]
-        bits: u8,
     },
 
-    /*
-    /// Output value in decimal representation (i.e. base-10)
-    #[clap(short, long, action)]
-    decimal: bool,
+    /// Show the hexidecimal representation of the input value (base-16).
+    Hex {
+        /// The base is determined by the value's prefix. E.g. 0oXX for octal, 0xXX for hexidecimal, and no prefix for
+        /// decimal.
+        #[clap(value_parser)]
+        input: String,
+    },
 
-    /// Output value in octal representation (i.e. base-8)
-    #[clap(short, long, action)]
-    octal: bool,
-    */
+    /// Show the decimal representation of the input value (base-10).
+    Decimal {
+        /// The base is determined by the value's prefix. E.g. 0oXX for octal, 0xXX for hexidecimal, and no prefix for
+        /// decimal.
+        #[clap(value_parser)]
+        input: String,
+    },
+
+    /// Show the octal representation of the input value (base-8).
+    Octal {
+        /// The base is determined by the value's prefix. E.g. 0oXX for octal, 0xXX for hexidecimal, and no prefix for
+        /// decimal.
+        #[clap(value_parser)]
+        input: String,
+    },
 }
 
 fn value_from_string(input: String) -> Result<u64, Box<dyn Error>> {
@@ -175,6 +189,27 @@ fn show_me_signed(input: &String, bits: &u8) {
     }
 }
 
+fn show_me_hex(input: &String) {
+    let input_val = value_from_string(input.to_string()).unwrap();
+
+    let u32_max = (1u64 << 32) - 1;
+    if input_val > u32_max {
+        println!("0x{:x}", input_val);
+    } else {
+        println!("0x{:x}", input_val as u32);
+    }
+}
+
+fn show_me_decimal(input: &String) {
+    let input_val = value_from_string(input.to_string()).unwrap();
+    println!("{}", input_val);
+}
+
+fn show_me_octal(input: &String) {
+    let input_val = value_from_string(input.to_string()).unwrap();
+    println!("{:0}", input_val);
+}
+
 fn main() {
     let cli = Cli::parse();
 
@@ -194,6 +229,15 @@ fn main() {
             }
 
             show_me_signed(input, &bits);
+        }
+        Commands::Hex { input } => {
+            show_me_hex(input);
+        }
+        Commands::Decimal { input } => {
+            show_me_decimal(input);
+        }
+        Commands::Octal { input } => {
+            show_me_octal(input);
         }
     }
 }
