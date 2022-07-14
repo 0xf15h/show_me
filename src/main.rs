@@ -1,6 +1,6 @@
 use clap::{Parser, Subcommand};
-use std::error::{Error};
-use std::{u64};
+use std::error::Error;
+use std::u64;
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about=None)]
@@ -8,7 +8,6 @@ use std::{u64};
 struct Cli {
     #[clap(subcommand)]
     command: Commands,
-
 }
 
 #[derive(Subcommand)]
@@ -86,11 +85,7 @@ fn show_me_bits(input: &String, chunk_size: u8) {
 
     // Deduce the number of bits need to represent the input value
     let u32_max = (1u64 << 32) - 1;
-    let num_bits: u64 = if input_val > u32_max {
-        64u64
-    } else {
-        32u64
-    };
+    let num_bits: u64 = if input_val > u32_max { 64u64 } else { 32u64 };
 
     // Table with chunk size 1
     //
@@ -134,7 +129,8 @@ fn show_me_bits(input: &String, chunk_size: u8) {
             format!("   {}+\n   ", raw_line)
         }
     } else if chunk_size == 2u8 {
-        let raw_line = "+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----";
+        let raw_line =
+            "+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----";
         if num_bits == 64 {
             format!("    {}{}+\n    ", raw_line, raw_line)
         } else {
@@ -151,7 +147,10 @@ fn show_me_bits(input: &String, chunk_size: u8) {
     table.push_str(&table_line);
 
     // Write each value
-    for bit_idx in (0..(num_bits - chunk_size as u64) + 1).rev().step_by(chunk_size as usize) {
+    for bit_idx in (0..(num_bits - chunk_size as u64) + 1)
+        .rev()
+        .step_by(chunk_size as usize)
+    {
         if chunk_size == 1u8 {
             table.push_str(&format!("| {:b} ", ((input_val >> bit_idx) & 0b1)).to_string());
         } else if chunk_size == 2u8 {
