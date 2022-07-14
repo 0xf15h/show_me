@@ -9,13 +9,6 @@ struct Cli {
     #[clap(subcommand)]
     command: Commands,
 
-    /// Output value in decimal representation (i.e. base-10)
-    #[clap(short, long, action)]
-    decimal: bool,
-
-    /// Output value in octal representation (i.e. base-8)
-    #[clap(short, long, action)]
-    octal: bool,
 }
 
 #[derive(Subcommand)]
@@ -32,19 +25,27 @@ enum Commands {
         chunk: u8,
     },
 
-    /// Show the signed representation of the input value.
+    /// Show the signed decimal representation of the input value.
     Signed {
         /// The base is determined by the value's prefix. E.g. 0oXX for octal, 0xXX for hexidecimal, and no prefix for
         /// decimal.
         #[clap(value_parser)]
         input: String,
-    },
-}
 
-enum OutputFormat {
-    Hexidecimal,
-    Octal,
-    Decimal,
+        /// Number of bits in the signed value: 8, 16, 32, or 64.
+        #[clap(default_value_t = 64, value_parser = clap::value_parser!(u8))]
+        bits: u8,
+    },
+
+    /*
+    /// Output value in decimal representation (i.e. base-10)
+    #[clap(short, long, action)]
+    decimal: bool,
+
+    /// Output value in octal representation (i.e. base-8)
+    #[clap(short, long, action)]
+    octal: bool,
+    */
 }
 
 fn value_from_string(input: String) -> Result<u64, Box<dyn Error>> {
@@ -152,34 +153,47 @@ fn show_me_bits(input: &String, chunk_size: u8) {
     println!("{}", table);
 }
 
-fn show_me_signed(input: &String, output_format: OutputFormat) {}
+fn show_me_signed(input: &String, bits: &u8) {
+    let input_val = value_from_string(input.to_string()).unwrap();
+
+    match bits {
+        8 => {
+            println!("{}", input_val as i8);
+        }
+        16 => {
+            println!("{}", input_val as i16);
+        }
+        32 => {
+            println!("{}", input_val as i32);
+        }
+        64 => {
+            println!("{}", input_val as i64);
+        }
+        _ => {
+            panic!("Bits value must be 8, 16, 32, or 64");
+        }
+    }
+}
 
 fn main() {
     let cli = Cli::parse();
 
-    if cli.decimal && cli.octal {
-        println!("Cannot specify both decimal and octal output");
-        return;
-    }
-
-    let mut output_format = OutputFormat::Hexidecimal;
-    if cli.decimal {
-        output_format = OutputFormat::Decimal;
-    } else if cli.octal {
-        output_format = OutputFormat::Octal;
-    }
-
     match &cli.command {
         Commands::Bits { input, chunk } => {
             if !vec![1, 2, 4].contains(chunk) {
-                println!("Can only chunk bits by 1, 2, or 4.");
+                eprintln!("Can only chunk bits by 1, 2, or 4.");
                 return;
             }
 
             show_me_bits(input, *chunk);
         }
-        Commands::Signed { input } => {
-            show_me_signed(input, output_format);
+        Commands::Signed { input, bits } => {
+            if !vec![8, 16, 32, 64].contains(bits) {
+                eprintln!("Bits value must be 8, 16, 32, or 64 but found {}.", bits);
+                return;
+            }
+
+            show_me_signed(input, &bits);
         }
     }
 }
